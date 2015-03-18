@@ -14,7 +14,7 @@ As ASBPlayerScrubbing is a pure behavior, it is highly reusable whatever your UI
 
 Example
 -------
-See the contained example to get a sample of ASBPlayerScrubbing created with Interfacebuilder.
+See the contained example to get a sample of ASBPlayerScrubbing created with Interface Builder.
 ![](https://github.com/autresphere/ASBPlayerScrubbing/raw/master/Screenshots/example1.jpg) 
 
 Using
