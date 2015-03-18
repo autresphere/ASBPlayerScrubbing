@@ -22,6 +22,8 @@ See the contained example to get a sample of ASBPlayerScrubbing created with Int
 
 Using
 -----
+Copy ASBPlayerScrubbing.h and ASBPlayerScrubbing.m in your project.
+
 You can either create a ASBPlayerScrubbing by code or inside Interface Builder.
 
 Creating with Interface Builder
