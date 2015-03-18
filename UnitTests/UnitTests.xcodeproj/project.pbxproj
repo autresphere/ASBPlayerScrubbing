@@ -33,6 +33,7 @@
 		4A7DDD671AB737740024707C = {
 			isa = PBXGroup;
 			children = (
+				4A8EF7811AB95D310045913D /* ASBPlayerScrubbing */,
 				4A7DDD8C1AB737740024707C /* UnitTests */,
 				4A7DDD711AB737740024707C /* Products */,
 			);
@@ -49,7 +50,6 @@
 		4A7DDD8C1AB737740024707C /* UnitTests */ = {
 			isa = PBXGroup;
 			children = (
-				4A8EF7811AB95D310045913D /* ASBPlayerScrubbing */,
 				4A7DDD8F1AB737740024707C /* ASBPlayerScrubbingTests.m */,
 				4A7DDD8D1AB737740024707C /* Supporting Files */,
 			);
@@ -72,7 +72,7 @@
 				4A8EF7831AB95D310045913D /* ASBPlayerScrubbing.m */,
 			);
 			name = ASBPlayerScrubbing;
-			path = ../../ASBPlayerScrubbing;
+			path = ../ASBPlayerScrubbing;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
