@@ -1,0 +1,5 @@
+language: objective-c
+before_script:
+- brew update
+- brew upgrade xctool || true
+script: xctool test -project UnitTests/UnitTests.xcodeproj -scheme UnitTests -sdk iphonesimulator
