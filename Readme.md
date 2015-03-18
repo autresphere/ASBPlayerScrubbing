@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/autresphere/ASBPlayerScrubbing.svg)](https://travis-ci.org/autresphere/ASBPlayerScrubbing)
+
+
 Purpose
 -------
 ASBPlayerScrubbing is an Objective-C library for easily adding scrubbing behavior to your AVPlayer on iOS.
