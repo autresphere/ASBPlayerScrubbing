@@ -1,5 +1,3 @@
-AVPlayer scrubbing made easy for iOS http://twitter.com/autresphere
-
 Purpose
 -------
 ASBPlayerScrubbing is an Objective-C library for easily adding scrubbing behavior to your AVPlayer on iOS.
@@ -17,6 +15,7 @@ As ASBPlayerScrubbing is a pure behavior, it is highly reusable whatever your UI
 Example
 -------
 See the contained example to get a sample of ASBPlayerScrubbing created with Interfacebuilder.
+![](https://github.com/autresphere/ASBPlayerScrubbing/raw/master/Screenshots/example1.jpg) 
 
 Using
 -----
