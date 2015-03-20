@@ -7,6 +7,12 @@ ASBPlayerScrubbing is an Objective-C library for easily adding scrubbing behavio
 
 Using ASBPlayerScrubbing requires only to link your player and slider to it. ASBPlayerScrubbing does all the wiring and computation to synchronize both slider and player. You can also optionally plug your time labels to the scrubbing such that they are also synchronized and show the corresponding times.
 
+Example
+-------
+See the contained example to get a sample of ASBPlayerScrubbing created with Interface Builder.
+
+![](https://github.com/autresphere/ASBPlayerScrubbing/raw/master/Screenshots/example1.jpg) 
+
 Behavior class
 --------------
 ASBPlayerScrubbing is a **pure behavior** class, it does not come with any graphical component. 
@@ -15,10 +21,14 @@ This means you are supposed to already have your own ```AVPlayer``` as well as y
 
 As ASBPlayerScrubbing is a pure behavior, it is highly reusable whatever your UI is made of.
 
-Example
--------
-See the contained example to get a sample of ASBPlayerScrubbing created with Interface Builder.
-![](https://github.com/autresphere/ASBPlayerScrubbing/raw/master/Screenshots/example1.jpg) 
+Features
+--------
+* Update slider position depending on player time
+* Update player time depending on slider position
+* Change player time by taping anywhere on slider
+* Play from the beginning if end is reached and play is called
+* Update time labels (current time, remaining time and duration) with timecodes (hours:minutes:seconds or hours:minutes:seconds:frames)
+* Update duration label as soon as this metadata is available from the player item
 
 Using
 -----
@@ -29,6 +39,9 @@ Creating with Interface Builder
 Inside InterfaceBuilder, add an object to your nib or storyboard, and set its class to ```ASBPlayerScrubbing```. Create an outlet inside your ViewController which links to the ```ASBPlayerScrubbing``` object. Then link your slider to the corresponding ```ASBPlayerScrubbing``` slider outlet. Optionally, you can also link your time labels.
 
 In your ViewController ```viewDidLoad``` method, you still need to set your player to the ```ASBPlayerScrubbing``` player property.
+```objc
+self.scrubbing.player = player;
+```
 
 NOTE: Creating an outlet inside your ViewController to keep track of the ```ASBPlayerScrubbing``` object is mandatory. This ensures the object won't be released.
 
@@ -47,7 +60,7 @@ ASBPlayerScrubbing can automatically update these typical time labels:
 * duration
 * remaining time.
 
-These labels shows the time by default in a standard format using hours, minutes and seconds as for example "05:23" (5 minutes 23 seconds) or "1:23:09" (1 hour 23 minutes 9 seconds). Optionally it can also show frame numbers as for example "1:23:09:24" (1 hour 23 minutes 9 seconds 24 frames). The maximum frame number depends on the player frame rate.
+These labels shows the time by default in a standard format using hours, minutes and seconds as for example "05:23" (5 minutes 23 seconds) or "1:23:09" (1 hour 23 minutes 9 seconds). Optionally it can also show frame numbers as for example "1:23:09:24" (1 hour 23 minutes 9 seconds 24 frames). The maximum frame number depends on the player item frame rate.
 
 The remaining time is typically shown with a minus sign.
 
@@ -75,8 +88,14 @@ ARC Compatibility
 -----------------
 ASBPlayerScrubbing requires ARC. If you wish to use ASBPlayerScrubbing in a non-ARC project, just add the -fobjc-arc compiler flag to the ASBPlayerScrubbing.m class. To do this, go to the Build Phases tab in your target settings, open the Compile Sources group, double-click ASBPlayerScrubbing.m in the list and type -fobjc-arc into the popover.
 
+Todo
+----
+* Improve drag support on slider
+* Change scrubing speed depending on the finger vertical distance to the slider 
+
 Recommended reading
 -------------------
+If you want to known more about behaviors:
 * Chris Eidhof on Intentions http://chris.eidhof.nl/posts/intentions.html
 * Krzysztof Zabłocki on Behaviors http://www.objc.io/issue-13/behaviors.html
 
