@@ -42,28 +42,25 @@
 - (void)setSlider:(UISlider *)slider
 {
     _slider = slider;
-    [self setupSliderTap];
+    [self setupSlider];
 }
 
 - (void)setPlayer:(AVPlayer *)player
 {
-    CMTime duration;
-    
     [self.player pause];
     [self removeTimeObserver];
     _player = player;
 
     self.nbFramesPerSecond = [ASBPlayerScrubbing nominalFrameRateForPlayer:self.player];
-    self.frameDuration = 1/self.nbFramesPerSecond;
+    
+    if (self.nbFramesPerSecond > 0) {
+        self.frameDuration = 1/self.nbFramesPerSecond;
+    } else {
+        self.frameDuration = 1/5.0;
+    }
     
     [self setupTimeObserver];
     [self updateCurrentTimeLabelWithTime:0];
-    
-    duration = self.player.currentItem.duration;
-    if(!CMTIME_IS_VALID(duration) || CMTIME_IS_INDEFINITE(duration))
-    {
-        [player.currentItem addObserver:self forKeyPath:@"duration" options:NSKeyValueObservingOptionNew context:nil];
-    }
 }
 
 - (void)setShowMinusSignOnRemainingTime:(BOOL)showMinusSignOnRemainingTime
@@ -147,7 +144,7 @@
     AVAssetTrack *track = nil;
     NSArray *tracks;
     
-    tracks = [player.currentItem.asset tracksWithMediaType:AVMediaTypeVideo];
+    tracks = player.currentItem.asset.tracks;
     if(tracks.count > 0)
     {
         track = tracks[0];
@@ -156,7 +153,7 @@
     return track.nominalFrameRate;
 }
 
-- (void)setupSliderTap
+- (void)setupSlider
 {
     UITapGestureRecognizer *gesture;
     
@@ -165,6 +162,11 @@
     
     gesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleSliderTap:)];
     [self.slider addGestureRecognizer:gesture];
+    
+    [self.slider addTarget:self action:@selector(sliderValueChanged:forEvent:) forControlEvents:UIControlEventValueChanged];
+    [self.slider addTarget:self action:@selector(sliderDidEndDragging:forEvent:) forControlEvents:UIControlEventTouchUpInside];
+    [self.slider addTarget:self action:@selector(sliderDidCancelDragging:forEvent:) forControlEvents:UIControlEventTouchUpOutside];
+    [self.slider addTarget:self action:@selector(sliderDidCancelDragging:forEvent:) forControlEvents:UIControlEventTouchCancel];
 }
 
 - (void)removeTimeObserver
@@ -182,11 +184,11 @@
     
     if(self.timeObserver != nil)
         return;
-    
+
     weakSelf = self;
-    if(self.nbFramesPerSecond > 0)
+    if(self.frameDuration > 0)
     {
-        self.timeObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(1/self.nbFramesPerSecond, NSEC_PER_SEC)
+        self.timeObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(self.frameDuration, NSEC_PER_SEC)
                                                                       queue:NULL
                                                                  usingBlock:^(CMTime time) {
                                                                      [weakSelf playerTimeChanged];
@@ -202,6 +204,12 @@
     
     if(self.player.currentItem == nil)
         return;
+    
+    if (CMTIME_COMPARE_INLINE(self.player.currentItem.currentTime, ==, self.player.currentItem.duration)) {
+        if (self.delegate != nil && [self.delegate respondsToSelector:@selector(playerScrubbingDidFinishPlaying:)]) {
+            [self.delegate playerScrubbingDidFinishPlaying:self];
+        }
+    }
     
     nbSecondsElapsed = CMTimeGetSeconds(self.player.currentItem.currentTime);
     if(CMTIME_IS_VALID(self.player.currentItem.duration) && !CMTIME_IS_INDEFINITE(self.player.currentItem.duration))
@@ -219,7 +227,9 @@
     
     [self updateCurrentTimeLabelWithTime:nbSecondsElapsed];
     [self updateRemainingTimeLabelWithTime:nbSecondsDuration - nbSecondsElapsed];
-    [self.delegate playerScrubbingDidUpdateTime:self];
+    if (self.delegate != nil && [self.delegate respondsToSelector:@selector(playerScrubbingDidUpdateTime:)]) {
+        [self.delegate playerScrubbingDidUpdateTime:self];
+    }
 }
 
 - (void)updateDurationLabelWithTime:(NSTimeInterval)time
@@ -246,22 +256,15 @@
     self.remainingTimeLabel.text = [self timecodeForTimeInterval:-time];
 }
 
-- (void)updatePlayer:(BOOL)playIfNeeded
+- (void)updatePlayer
 {
     CGFloat nbSecondsDuration;
     CMTime time;
 
     nbSecondsDuration = CMTimeGetSeconds(self.player.currentItem.duration);
-    time = CMTimeMakeWithSeconds(nbSecondsDuration*self.slider.value, NSEC_PER_SEC);
-    [self.player seekToTime:time toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(BOOL finished) {
-        if(playIfNeeded && (self.slider.value < self.slider.maximumValue))
-        {
-            if(self.playAfterDrag)
-            {
-                [self.player play];
-            }
-        }
-    }];
+    int timescale = self.player.currentItem.asset.duration.timescale;
+    time = CMTimeMakeWithSeconds(nbSecondsDuration*self.slider.value, timescale);
+    [self.player seekToTime:time toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(BOOL finished) {}];
 }
 
 #pragma mark - Actions
@@ -270,34 +273,69 @@
     UITouch *touch;
     
     touch = [[event allTouches] anyObject];
-    if(touch.phase == UITouchPhaseBegan)
+
+    if([self isPlaying] && touch.phase == UITouchPhaseBegan)
     {
-        self.playAfterDrag = (self.player.rate > 0);
+        self.playAfterDrag = [self isPlaying];
         [self.player pause];
     }
     
-    [self updatePlayer:(touch.phase == UITouchPhaseEnded)];
+    [self updatePlayer];
+}
+
+- (IBAction)sliderDidEndDragging:(id)sender forEvent:(UIEvent *)event
+{
+    if(self.playAfterDrag)
+    {
+        self.playAfterDrag = NO;
+        [self.player play];
+    }
+}
+
+- (IBAction)sliderDidCancelDragging:(id)sender forEvent:(UIEvent *)event
+{
+    if(self.playAfterDrag)
+    {
+        self.playAfterDrag = NO;
+        [self.player play];
+    }
+}
+
+- (BOOL)isPlaying
+{
+    return !(self.player.rate == 0);
 }
 
 - (IBAction)playPause:(id)sender
 {
-    if(self.player.rate == 0)
+    if(self.isPlaying)
     {
-        if(CMTIME_COMPARE_INLINE(self.player.currentTime, == , self.player.currentItem.duration))
-        {
-            [self.player seekToTime:kCMTimeZero completionHandler:^(BOOL finished) {
-                [self.player play];
-            }];
-        }
-        else
-        {
-            [self.player play];
-        }
+        [self pause:sender];
     }
     else
     {
-        [self.player pause];
+        
+        [self play:sender];
     }
+}
+
+- (IBAction)play:(id)sender
+{
+    if(CMTIME_COMPARE_INLINE(self.player.currentTime, == , self.player.currentItem.duration))
+    {
+        [self.player seekToTime:kCMTimeZero completionHandler:^(BOOL finished) {
+            [self.player play];
+        }];
+    }
+    else
+    {
+        [self.player play];
+    }
+}
+
+- (IBAction)pause:(id)sender
+{
+    [self.player pause];
 }
 
 - (void)handleSliderTap:(UIGestureRecognizer *)gesture
@@ -307,13 +345,11 @@
     CGFloat delta;
     CGFloat value;
     CGFloat thumbWidth;
-    BOOL isPlaying;
     
     // tap on thumb, let slider deal with it
     if (self.slider.highlighted)
         return;
     
-    isPlaying = (self.player.rate > 0);
     CGRect trackRect = [self.slider trackRectForBounds:self.slider.bounds];
     CGRect thumbRect = [self.slider thumbRectForBounds:self.slider.bounds trackRect:trackRect value:0];
     CGSize thumbSize = thumbRect.size;
@@ -334,16 +370,7 @@
     delta = ratio * (self.slider.maximumValue - self.slider.minimumValue);
     value = self.slider.minimumValue + delta;
     [self.slider setValue:value animated:YES];
-    [self updatePlayer:isPlaying];
+    [self updatePlayer];
 }
 
-#pragma mark - KVO
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
-{
-    if(CMTIME_IS_VALID(self.player.currentItem.duration) && !CMTIME_IS_INDEFINITE(self.player.currentItem.duration))
-    {
-        [self.player.currentItem removeObserver:self forKeyPath:@"duration"];
-        [self playerTimeChanged];
-    }
-}
 @end
