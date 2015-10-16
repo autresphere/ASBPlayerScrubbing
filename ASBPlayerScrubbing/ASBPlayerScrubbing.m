@@ -48,6 +48,7 @@
 - (void)setPlayer:(AVPlayer *)player
 {
     [self.player pause];
+    [self invalidate];
     [self removeTimeObserver];
     _player = player;
 
@@ -61,6 +62,12 @@
     
     [self setupTimeObserver];
     [self updateCurrentTimeLabelWithTime:0];
+    
+    [self.player.currentItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:NULL];
+}
+
+- (void)invalidate {
+    [self.player.currentItem removeObserver:self forKeyPath:@"status"];
 }
 
 - (void)setShowMinusSignOnRemainingTime:(BOOL)showMinusSignOnRemainingTime
@@ -92,47 +99,29 @@
 
 - (NSString *)timecodeForTimeInterval:(NSTimeInterval)time
 {
-    NSInteger seconds;
-    NSInteger hours;
-    NSInteger minutes;
-    CGFloat milliseconds;
-    NSInteger nbFrames = 0;
-    NSString *timecode;
-    NSString *sign;
+    return [ASBPlayerScrubbing timecodeForTimeInterval:time frameRate:self.nbFramesPerSecond showFrames:self.showTimeFrames showHours:self.showTimeHours];
+}
+
++ (NSString *)timecodeForTimeInterval:(NSTimeInterval)time frameRate:(CGFloat)frameRate showFrames:(BOOL)showFrames showHours:(BOOL)showHours {
+    NSTimeInterval frametime = time - floorf(time);
+    int frames = frametime * frameRate;
     
-    sign = ((time < 0) && self.showMinusSignOnRemainingTime?@"\u2212":@"");
-    time = ABS(time);
-    hours = time/60/24;
-    minutes = (time - hours*24)/60;
-    seconds = (time - hours*24) - minutes*60;
+    int totalSeconds = (int)ceilf(time);
     
-    if(self.showTimeFrames)
-    {
-        milliseconds = time - (NSInteger)time;
-        nbFrames = milliseconds*self.nbFramesPerSecond;
+    int seconds = totalSeconds % 60;
+    int minutes = (totalSeconds / 60) % 60;
+    int hours = totalSeconds / 3600;
+
+    NSString *timecode = @"";
+
+    if (showFrames) {
+        timecode = [NSString stringWithFormat:@":%02d", frames];
     }
     
-    if((hours > 0) || self.showTimeHours)
-    {
-        if(self.showTimeFrames)
-        {
-            timecode = [NSString stringWithFormat:@"%@%d:%02d:%02d:%02d", sign, (int)hours, (int)minutes, (int)seconds, (int)nbFrames];
-        }
-        else
-        {
-            timecode = [NSString stringWithFormat:@"%@%d:%02d:%02d", sign, (int)hours, (int)minutes, (int)seconds];
-        }
-    }
-    else
-    {
-        if(self.showTimeFrames)
-        {
-            timecode = [NSString stringWithFormat:@"%@%02d:%02d:%02d", sign, (int)minutes, (int)seconds, (int)nbFrames];
-        }
-        else
-        {
-            timecode = [NSString stringWithFormat:@"%@%02d:%02d", sign, (int)minutes, (int)seconds];
-        }
+    if (hours > 0 || showHours) {
+        timecode = [NSString stringWithFormat:@"%2d:%02d:%02d%@", hours, minutes, seconds, timecode];
+    } else {
+        timecode = [NSString stringWithFormat:@"%02d:%02d%@", minutes, seconds, timecode];
     }
     
     return timecode;
@@ -371,6 +360,22 @@
     value = self.slider.minimumValue + delta;
     [self.slider setValue:value animated:YES];
     [self updatePlayer];
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSString *,id> *)change context:(void *)context {
+    if (object == self.player.currentItem && [keyPath isEqualToString:@"status"]) {
+        AVPlayerItem *item = (AVPlayerItem *)object;
+        switch (item.status) {
+            case AVPlayerItemStatusFailed:
+                if (self.delegate != nil && [self.delegate respondsToSelector:@selector(playerScrubbingDidError:)]) {
+                    [self.delegate playerScrubbingDidError:self];
+                }
+                break;
+            case AVPlayerItemStatusReadyToPlay:
+            case AVPlayerItemStatusUnknown:
+                break;
+        }
+    }
 }
 
 @end

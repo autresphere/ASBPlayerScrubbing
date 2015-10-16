@@ -15,4 +15,5 @@
 @optional
 - (void)playerScrubbingDidUpdateTime:(ASBPlayerScrubbing *)scrubbing;
 - (void)playerScrubbingDidFinishPlaying:(ASBPlayerScrubbing *)scrubbing;
+- (void)playerScrubbingDidError:(ASBPlayerScrubbing *)scrubbing;
 @end
