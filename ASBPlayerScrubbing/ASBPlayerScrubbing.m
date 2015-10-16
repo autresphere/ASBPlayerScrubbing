@@ -48,7 +48,6 @@
 - (void)setPlayer:(AVPlayer *)player
 {
     [self.player pause];
-    [self invalidate];
     [self removeTimeObserver];
     _player = player;
 
@@ -64,10 +63,6 @@
     [self updateCurrentTimeLabelWithTime:0];
     
     [self.player.currentItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:NULL];
-}
-
-- (void)invalidate {
-    [self.player.currentItem removeObserver:self forKeyPath:@"status"];
 }
 
 - (void)setShowMinusSignOnRemainingTime:(BOOL)showMinusSignOnRemainingTime
@@ -376,6 +371,10 @@
                 break;
         }
     }
+}
+
+- (void)dealloc {
+    [self.player.currentItem removeObserver:self forKeyPath:@"status"];
 }
 
 @end
