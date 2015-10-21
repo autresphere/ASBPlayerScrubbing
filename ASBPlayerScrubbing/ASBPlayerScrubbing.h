@@ -37,8 +37,6 @@
 - (IBAction)play:(id)sender;
 - (IBAction)pause:(id)sender;
 
-- (void)invalidate;
-
 + (NSString *)timecodeForTimeInterval:(NSTimeInterval)time frameRate:(CGFloat)frameRate showFrames:(BOOL)showFrames showHours:(BOOL)showHours;
 
 @end
