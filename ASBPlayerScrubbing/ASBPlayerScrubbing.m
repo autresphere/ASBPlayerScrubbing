@@ -10,6 +10,8 @@
 
 @interface ASBPlayerScrubbing ()
 
+@property (nonatomic, strong) AVPlayerItem *currentPlayerItem;
+
 @property (nonatomic, assign) BOOL playAfterDrag;
 @property (nonatomic, assign) id timeObserver;
 @property (nonatomic, assign) CGFloat frameDuration;
@@ -62,7 +64,7 @@
     [self setupTimeObserver];
     [self updateCurrentTimeLabelWithTime:0];
     
-    [self.player.currentItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:NULL];
+    [self addStatusObserverOnItem:self.player.currentItem];
 }
 
 - (void)setShowMinusSignOnRemainingTime:(BOOL)showMinusSignOnRemainingTime
@@ -373,8 +375,22 @@
     }
 }
 
+- (void)setCurrentPlayerItem:(AVPlayerItem *)currentPlayerItem {
+    [self removeStatusObserverOnItem:_currentPlayerItem];
+    _currentPlayerItem = currentPlayerItem;
+}
+
+- (void)addStatusObserverOnItem:(AVPlayerItem *)item {
+    self.currentPlayerItem = self.player.currentItem;
+    [self.currentPlayerItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:NULL];
+}
+
+- (void)removeStatusObserverOnItem:(AVPlayerItem *)item {
+    [item removeObserver:self forKeyPath:@"status"];
+}
+
 - (void)dealloc {
-    [self.player.currentItem removeObserver:self forKeyPath:@"status"];
+    [self removeStatusObserverOnItem:self.currentPlayerItem];
 }
 
 @end
