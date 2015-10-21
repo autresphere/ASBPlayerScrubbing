@@ -9,14 +9,7 @@
 #import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
 
-@class ASBPlayerScrubbing;
-
-@protocol ASBPlayerScrubbingDelegate <NSObject>
-
-- (void)playerScrubbingDidUpdateTime:(ASBPlayerScrubbing *)scrubbing;
-
-@end
-
+#import "ASBPlayerScrubbingDelegate.h"
 
 @interface ASBPlayerScrubbing : NSObject
 
@@ -37,5 +30,13 @@
 
 // Returns the formatted representation of the specified time. If showTimeFrames is YES, the representation respects the player frame rate.
 - (NSString *)timecodeForTimeInterval:(NSTimeInterval)time;
+
+@property (nonatomic, readonly) BOOL isPlaying;
+
+- (IBAction)playPause:(id)sender;
+- (IBAction)play:(id)sender;
+- (IBAction)pause:(id)sender;
+
++ (NSString *)timecodeForTimeInterval:(NSTimeInterval)time frameRate:(CGFloat)frameRate showFrames:(BOOL)showFrames showHours:(BOOL)showHours;
 
 @end
