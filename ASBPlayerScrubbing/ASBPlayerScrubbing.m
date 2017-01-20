@@ -346,4 +346,9 @@
         [self playerTimeChanged];
     }
 }
+
+#pragma mark - KVO deallocation
+- (void) dealloc {
+    [self.player.currentItem removeObserver: self forKeyPath: @"duration"];
+}
 @end
