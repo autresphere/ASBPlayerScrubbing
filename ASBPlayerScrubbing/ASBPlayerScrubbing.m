@@ -349,6 +349,11 @@
 
 #pragma mark - KVO deallocation
 - (void) dealloc {
-    [self.player.currentItem removeObserver: self forKeyPath: @"duration"];
+    @try {
+        [self.player.currentItem removeObserver: self forKeyPath: @"duration"];
+    }
+    @catch(NSException *exception) {
+        NSLog(@"exception: %@", exception.description);
+    }
 }
 @end
