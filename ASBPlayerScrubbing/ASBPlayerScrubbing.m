@@ -346,4 +346,14 @@
         [self playerTimeChanged];
     }
 }
+
+#pragma mark - KVO deallocation
+- (void) dealloc {
+    @try {
+        [self.player.currentItem removeObserver: self forKeyPath: @"duration"];
+    }
+    @catch(NSException *exception) {
+        NSLog(@"exception: %@", exception.description);
+    }
+}
 @end
